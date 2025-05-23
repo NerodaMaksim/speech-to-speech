@@ -4,6 +4,10 @@ from pathlib import Path
 from src.models.models import build_model
 from src.core.kokoro import generate
 from .voice import split_into_sentences
+from transformers import VitsModel, AutoTokenizer
+import scipy
+import time
+import librosa
 
 
 class VoiceGenerator:
@@ -26,6 +30,7 @@ class VoiceGenerator:
         self.models_dir = models_dir
         self.voices_dir = voices_dir
         self._initialized = False
+        self.tokenizer = None
 
     def initialize(self, model_path, voice_name):
         """
@@ -43,11 +48,10 @@ class VoiceGenerator:
         """
         model_file = self.models_dir / model_path
         if not model_file.exists():
-            raise FileNotFoundError(
-                f"Model file not found at {model_file}. Please place the model file in the 'models' directory."
-            )
-
-        self.model = build_model(str(model_file), self.device)
+            self.model = VitsModel.from_pretrained(model_path) 
+            self.tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-rus")
+        else:
+            self.model = build_model(str(model_file), self.device)
         self.voice_name = voice_name
 
         voice_path = self.voices_dir / f"{voice_name}.pt"
@@ -124,9 +128,24 @@ class VoiceGenerator:
         try:
             if len(text) < short_text_limit:
                 try:
-                    audio, phonemes = generate(
-                        self.model, text, self.voicepack, lang=lang, speed=speed
-                    )
+                    # audio, phonemes = generate(
+                    #     self.model, text, self.voicepack, lang=lang, speed=speed
+                    # )
+                    inputs = self.tokenizer(text, return_tensors='pt')
+                    with torch.no_grad():
+                        audio = self.model(**inputs).waveform[0]
+                        phonemes = None
+                        # Assuming 'output' is your PyTorch tensor
+                        # output_cpu = output.cpu() # Move tensor to CPU if it's on GPU
+                        # output_numpy = output_cpu.numpy() # Convert to NumPy array
+                        # audio = np.squeeze(output) #Remove single-dimensional entries from the shape of an array
+
+                    n_steps = -5 # Example: Pitch down by 5 semitones
+
+                    # Perform pitch shifting using librosa
+                    audio = librosa.effects.pitch_shift(audio.cpu().numpy(), sr=self.model.config.sampling_rate, n_steps=n_steps)
+                    # scipy.io.wavfile.write(f"{time.time()}.wav", rate=self.model.config.sampling_rate,data=audio)
+                    
                     if audio is None or len(audio) == 0:
                         raise ValueError(f"Failed to generate audio for text: {text}")
                     return (
@@ -153,9 +172,23 @@ class VoiceGenerator:
                     if audio_segments and not return_chunks:
                         audio_segments.append(np.zeros(pause_duration))
 
-                    audio, phonemes = generate(
-                        self.model, sentence, self.voicepack, lang=lang, speed=speed
-                    )
+                    # audio, phonemes = generate(
+                    #     self.model, sentence, self.voicepack, lang=lang, speed=speed
+                    # )
+                    inputs = self.tokenizer(text, return_tensors='pt')
+                    with torch.no_grad():
+                        audio = self.model(**inputs).waveform[0]
+                        phonemes = None
+                        # Assuming 'output' is your PyTorch tensor
+                        # output_cpu = output.cpu() # Move tensor to CPU if it's on GPU
+                        # output_numpy = output_cpu.numpy() # Convert to NumPy array
+                        # audio = np.squeeze(output) #Remove single-dimensional entries from the shape of an array
+
+                    # scipy.io.wavfile.write(f"{time.time()}.wav", rate=self.model.config.sampling_rate,data=audio)
+                    n_steps = -5 # Example: Pitch down by 5 semitones
+
+                    # Perform pitch shifting using librosa
+                    audio = librosa.effects.pitch_shift(audio.cpu().numpy(), sr=self.model.config.sampling_rate, n_steps=n_steps)
                     if audio is not None and len(audio) > 0:
                         audio_segments.append(audio)
                         phonemes_list.extend(phonemes)

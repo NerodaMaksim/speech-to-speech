@@ -173,6 +173,7 @@ class AudioGenerationQueue:
                     self.audio_queue.put((audio_data, output_path))
 
                 except Exception as e:
+                    print("Fucking fuck", e)
                     error_msg = str(e)
                     self.failed_sentences.append((sentence, error_msg))
                     continue
