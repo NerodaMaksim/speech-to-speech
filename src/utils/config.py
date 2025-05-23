@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     LLM_RETRY_DELAY: float = Field(default=0.5, env="LLM_RETRY_DELAY")
     MAX_RETRIES: int = Field(default=3, env="MAX_RETRIES")
 
-    WHISPER_MODEL: str = Field(default="openai/whisper-tiny.en", env="WHISPER_MODEL")
+    WHISPER_MODEL: str = Field(default="openai/whisper-tiny", env="WHISPER_MODEL")
 
     VAD_MODEL: str = Field(default="pyannote/segmentation-3.0", env="VAD_MODEL")
     VAD_MIN_DURATION_ON: float = Field(default=0.1, env="VAD_MIN_DURATION_ON")

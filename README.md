@@ -43,7 +43,7 @@ We basically put a few models together to work in a multi-threaded architecture,
 To achieve that we use:
 
 - **Voice Activity Detection**: Pyannote:pyannote/segmentation-3.0
-- **Speech Recognition**: Whisper:whisper-tiny.en (OpenAI)
+- **Speech Recognition**: Whisper:whisper-tiny (OpenAI)
 - **Language Model**: LM Studio/Ollama with qwen2.5:0.5b-instruct-q8_0
 - **Voice Synthesis**: Kokoro:hexgrad/Kokoro-82M
 
